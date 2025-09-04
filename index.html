@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data:;
+    media-src 'self';
+    connect-src 'self' ws:;
+  ">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table By Yoco Product Loader</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%2300A3FF'/%3E%3Ctext x='50' y='70' font-size='50' font-family='Poppins, sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EY%3C/text%3E%3C/svg%3E">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="title-container">
+            <a id="howToGuideLink" href="#" target="_blank" class="how-to-guide">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span class="tooltiptext">How-to Guide</span>
+            </a>
+            <h2><span id="secretTrigger" title="Unlock advanced features">T</span>able By Yoco Product Loader</h2>
+        </div>
+        <span id="saveStatus">Saved!</span>
+        <div class="button-container">
+            <div id="secretActionsContainer" style="display: none; gap: 15px; flex-wrap: wrap;">
+                </div>
+            <button type="button" onclick="exportToExcel()" class="btn-export">Export to Excel</button>
+            <button type="button" onclick="confirmClearAll()" class="btn-clear" title="Clear All Data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M3 6v18h18v-18h-18zm5 14c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4-18h-20v-2h6v-1.5c0-.827.673-1.5 1.5-1.5h5c.825 0 1.5.671 1.5 1.5v1.5h6v2z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="session-settings">
+        <h3>Session Defaults</h3>
+        <div class="form-group">
+            <label for="sessionSite" class="tooltip"><span class="label-text">Site<span class="required-star">*</span></span><span class="tooltiptext">The name of the physical location or branch this product belongs to.</span></label>
+            <input list="siteList" id="sessionSite" required placeholder="e.g., Main Street Cafe">
+            <datalist id="siteList"></datalist>
+        </div>
+        <div class="form-group">
+            <label for="sessionDefinePlu" class="tooltip"><span class="label-text">Define PLU/SKU?<span class="required-star">*</span></span><span class="tooltiptext">Choose 'Yes' to manually enter a unique code for each product, or 'No' to have one automatically generated.</span></label>
+            <select id="sessionDefinePlu">
+                <option value="no">No (Auto-generate)</option>
+                <option value="yes">Yes (Manual Entry)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <button type="button" id="defaultsButton" onclick="setDefaults()" class="btn-add">Set Defaults</button>
+        </div>
+    </div>
+
+    <form id="productForm" novalidate>
+        <input type="hidden" id="editingIndex" value="-1">
+        <div class="form-group">
+            <label for="productName" class="tooltip"><span class="label-text">Product Name<span class="required-star">*</span></span><span class="tooltiptext">The primary name of the item as it will appear on menus and in reports.</span></label>
+            <input type="text" id="productName" required placeholder="e.g., Chicken Pizza">
+            <div id="single-product-modifier-controls" style="display: none; margin-top: 10px;">
+                <button type="button" id="linkSingleModifierBtn" class="btn-add btn-add-dynamic">Link Modifier</button>
+                <span id="singleModifierIndicator"></span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="taxApplicable" class="tooltip"><span class="label-text">Tax Applicable<span class="required-star">*</span></span><span class="tooltiptext">Select whether this product is subject to tax.</span></label>
+            <select id="taxApplicable" required>
+                <option value="" disabled selected>-- Choose --</option>
+                <option value="true">TRUE</option>
+                <option value="false">FALSE</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="productType" class="tooltip"><span class="label-text">Product Type<span class="required-star">*</span></span><span class="tooltiptext">Defines how the item is handled in inventory. 'finishedGood' is sold, 'rawMaterial' is used in recipes, 'Manufactured' is a recipe item itself.</span></label>
+            <select id="productType" required>
+                <option value="" disabled selected>-- Select --</option>
+                <option value="finishedGood">finishedGood</option>
+                <option value="rawMaterial">rawMaterial</option>
+                <option value="finishedGood & rawMaterial">finishedGood & rawMaterial</option>
+                <option value="Manufactured">Manufactured</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="sellingPriceGroup">
+            <label for="sellingPrice" id="sellingPriceLabel" class="tooltip"><span class="label-text">Default Selling Price</span><span class="tooltiptext">Set the price if the product has no variants. This field is hidden when variants are added.</span></label>
+            <input type="number" step="0.01" id="sellingPrice" placeholder="e.g., 35.00">
+        </div>
+
+        <div class="form-group" id="pluEntryGroup" style="display: none;">
+            <label for="customPlu" class="tooltip"><span class="label-text">Custom Base PLU/SKU<span class="required-star">*</span></span><span class="tooltiptext">Enter a unique code for this product. This will be the base for variants if any are added.</span></label>
+            <input type="text" id="customPlu" placeholder="e.g., PIZZA-CHE">
+        </div>
+        
+        <div class="variants-and-pricing-wrapper">
+            <div id="variants-column">
+                <div> <label class="tooltip">Variant Groups
+                        <span class="tooltiptext with-gif">
+                            <span class="tooltip-text-content">Create groups for product options like size or color. Each group can have multiple options.</span>
+                            <img src="variant-groups-demo.gif" alt="Variant groups demo" class="tooltip-gif">
+                        </span>
+                    </label>
+                    <div id="variantGroupsContainer"></div>
+                    <div class="dynamic-controls-wrapper">
+                         <button type="button" id="addVariantGroupBtn" onclick="addVariantGroup()" class="btn-add btn-add-dynamic">Add Variant Group</button>
+                    </div>
+                </div>
+                <div> <label class="tooltip">Modifier Groups
+                        <span class="tooltiptext">Create optional add-ons (e.g., Extra Toppings) and link them to products or variants.</span>
+                     </label>
+                     <div class="dynamic-controls-wrapper">
+                        <button type="button" id="openModifierModalBtn" class="btn-add btn-add-dynamic">Add/Edit Modifiers</button>
+                    </div>
+                </div>
+            </div>
+            <div id="pricing-column" style="display: none;">
+                <label class="tooltip">Combination Pricing
+                    <span class="tooltiptext">Set the price for each unique combination of variants. A selling price is required for each.</span>
+                </label>
+                <div id="variantPricingContainer"></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="uom" class="tooltip"><span class="label-text">UOM<span class="required-star">*</span></span><span class="tooltiptext">Unit of Measure. How the product is sold or measured (e.g., Each, kg, Litres).</span></label>
+            <select id="uom" required>
+            <option value="" disabled>-- Select UOM --</option>
+            <option value="ea" selected>Each</option>
+            <option value="kg">Kilograms</option><option value="g">Grams</option>
+            <option value="l">Litres</option><option value="ml">Millilitres</option>
+            <option value="m">Meters</option><option value="mm">Millimeters</option>
+            <option value="cm">Centimeters</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="prepLocationGroup">
+            <label for="prepLocation" class="tooltip"><span class="label-text">Prep Location<span class="required-star">*</span></span><span class="tooltiptext">Where the item is prepared (e.g., Kitchen, Bar).</span></label>
+            <input list="prepList" id="prepLocation" required placeholder="e.g., Kitchen">
+            <datalist id="prepList"></datalist>
+        </div>
+
+        <div class="form-group" id="menuCategoryGroup">
+            <label for="menuCategory" class="tooltip"><span class="label-text">Menu Category<span class="required-star">*</span></span><span class="tooltiptext">The category this item will appear under on the menu (e.g., Starters, Mains, Drinks).</span></label>
+            <input type="text" id="menuCategory" list="menuList" required placeholder="e.g., Burgers">
+            <datalist id="menuList"></datalist>
+        </div>
+        
+        <div class="form-group">
+            <label for="inventoryCategory" id="inventoryCategoryLabel" class="tooltip"><span class="label-text">Inventory Category</span><span class="tooltiptext">The main category for tracking this item in inventory (e.g., Food, Beverages, Packaging).</span></label>
+            <input type="text" id="inventoryCategory" list="inventoryCategoryList" placeholder="e.g., Food">
+            <datalist id="inventoryCategoryList"></datalist>
+        </div>
+
+        <div class="form-group">
+            <label for="inventorySubCategory" id="inventorySubCategoryLabel" class="tooltip"><span class="label-text">Inventory Sub-Category</span><span class="tooltiptext">A more specific inventory category (e.g., Meat, Dairy, Produce).</span></label>
+            <input type="text" id="inventorySubCategory" list="inventorySubCategoryList" placeholder="e.g., Meat">
+            <datalist id="inventorySubCategoryList"></datalist>
+        </div>
+        
+        <div class="form-group" id="costPriceGroup" style="display: none;">
+            <label for="costPrice" id="costPriceLabel" class="tooltip"><span class="label-text">Total Cost Price (ex. Vat)</span><span class="tooltiptext">The total cost for the supplied quantity of a raw material.</span></label>
+            <input type="number" step="0.01" id="costPrice" placeholder="e.g., 15.50">
+        </div>
+
+        <div class="form-group" id="suppliedQuantityGroup" style="display: none;">
+            <label for="suppliedQuantity" id="suppliedQuantityLabel" class="tooltip"><span class="label-text">Supplied Quantity</span><span class="tooltiptext">The quantity of a raw material received from a supplier (e.g., 10 kg).</span></label>
+            <div class="input-wrapper">
+                <input type="number" id="suppliedQuantity" placeholder="e.g., 100">
+                <span id="quantityGhostText" class="ghost-text"></span>
+            </div>
+        </div>
+        
+        <div class="form-group" id="yieldQuantityGroup" style="display: none;">
+            <label for="yieldQuantity" id="yieldQuantityLabel" class="tooltip"><span class="label-text">Yield Quantity</span><span class="tooltiptext">The quantity produced from a manufactured recipe.</span></label>
+             <div class="input-wrapper">
+                <input type="number" id="yieldQuantity" placeholder="e.g., 50">
+                <span id="yieldGhostText" class="ghost-text"></span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="hasBarcode" class="tooltip"><span class="label-text">Has Barcode?</span><span class="tooltiptext">Select 'Yes' if this product has a scannable barcode.</span></label>
+            <select id="hasBarcode"> <option value="no">No</option> <option value="yes">Yes</option> </select>
+        </div>
+
+        <div class="form-group" id="barcodeEntryGroup" style="display: none;">
+            <label for="barcode" class="tooltip"><span class="label-text">Barcode</span><span class="tooltiptext">Enter the numerical barcode for this product.</span></label>
+            <input type="text" id="barcode" placeholder="Enter product barcode">
+        </div>
+        
+        <div class="form-actions-footer">
+            <div class="remember-me-container">
+                <input type="checkbox" id="rememberCategories" checked>
+                <label for="rememberCategories">Remember categories for next product</label>
+            </div>
+            <button type="button" id="mainActionButton" class="btn-add">Add Product</button>
+        </div>
+    </form>
+
+    <div class="list-container">
+        <div class="tabs">
+            <button class="tab-link active" data-tab="products">Products</button>
+            <button class="tab-link" data-tab="stock">Stock Items</button>
+        </div>
+        <div id="products" class="tab-content active">
+            <div class="search-container">
+                <input type="search" id="productSearch" placeholder="Search products by name, variant, category...">
+            </div>
+            <div class="table-container">
+                <table id="productTable">
+                    <thead>
+                        <tr>
+                            <th>PLU</th>
+                            <th>Product Name</th>
+                            <th>Variant</th>
+                            <th>Menu Category</th>
+                            <th>Selling Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="stock" class="tab-content">
+             <div class="search-container">
+                <input type="search" id="stockSearch" placeholder="Search stock by name, category...">
+            </div>
+             <div class="table-container">
+                <table id="stockTable">
+                    <thead>
+                        <tr>
+                            <th>PLU</th>
+                            <th>Product Name</th>
+                            <th>Inv. Category</th>
+                            <th>UOM</th>
+                            <th>Cost Price (ex. Vat)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+         <div class="table-footer">
+            <button type="button" onclick="updateTable()" class="btn-import">Refresh Lists</button>
+            <button type="button" onclick="exportToExcel()" class="btn-export">Export to Excel</button>
+        </div>
+    </div>
+</div>
+
+<div id="customModal" class="modal-overlay">
+  <div class="modal-content">
+    <p id="modalMessage"></p>
+    <div id="modalActions" class="modal-actions"></div>
+  </div>
+</div>
+
+<div id="modifierModal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="color: var(--yoco-primary); margin-top: 0;">Manage Modifier Groups</h3>
+      
+      <div class="modal-section-divider">
+        <h4>Add New Modifier Group</h4>
+        <div id="newModifierGroupForm" class="modifier-group-row">
+            </div>
+      </div>
+
+      <h4>Edit Existing Groups</h4>
+      <div id="editModifierGroupsContainer">
+        </div>
+
+      <div class="modal-actions" style="margin-top: 20px;">
+          <button type="button" id="saveModifiersBtn" class="btn-add">Save and Close</button>
+          <button type="button" id="closeModifierModalBtn" class="btn-export">Cancel</button>
+      </div>
+    </div>
+</div>
+
+<div id="linkModifierModal" class="modal-overlay">
+  <div class="modal-content">
+    <h4 id="linkModifierModalTitle" style="color: var(--yoco-primary); margin-top: 0; margin-bottom: 20px;">Link Modifiers for...</h4>
+    
+    <div class="modal-section-divider">
+        <h4>Bulk Apply to All Variants on Form</h4>
+        <div style="display: flex; gap: 10px; align-items: center; padding: 10px 0;">
+            <select id="bulkModifierSelect" style="flex-grow: 1;"></select>
+            <button type="button" id="bulkApplyModifierBtn" class="btn-add-dynamic">Apply to All</button>
+        </div>
+    </div>
+
+    <div id="linkModifierListContainer">
+      </div>
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button type="button" id="closeLinkModifierModalBtn" class="btn-add">Done</button>
+    </div>
+  </div>
+</div>
+
+<audio id="exportSound" src="tableaudio.mp3" preload="auto"></audio>
+
+<div id="videoOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; z-index: 2000; justify-content: center; align-items: center;">
+  <video id="exportVideo" width="600" style="max-width: 90%; max-height: 90%;" playsinline>
+    <source src="animated-logo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
+<div id="hover-board">
+    <button id="scrollToTopBtn" class="hover-board-link" title="Scroll to Top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/>
+        </svg>
+    </button>
+    <a href="https://www.yoco.com/za/legal/privacy-policy/" target="_blank" class="hover-board-link">Privacy</a>
+    <a href="https://www.yoco.com/za/legal/terms-and-conditions/" target="_blank" class="hover-board-link">Terms</a>
+</div>
+
+<script src="script.js" defer></script>
+
+</body>
+</html>
