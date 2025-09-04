@@ -83,13 +83,18 @@
         font-weight: 500; opacity: 0; transition: opacity 0.5s ease-in-out;
         pointer-events: none;
     }
-    .session-settings {
+    .session-settings, .product-defaults {
         background-color: var(--yoco-surface); border: 1px solid var(--yoco-border);
         border-radius: 16px; padding: 30px; margin-bottom: 40px;
         display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 25px; align-items: end;
     }
-    .session-settings h3 { grid-column: 1 / -1; margin: 0 0 10px 0; color: var(--yoco-primary); }
+    .session-settings h3, .product-defaults h3 { 
+        grid-column: 1 / -1; margin: 0 0 10px 0; color: var(--yoco-primary); 
+    }
+    .product-defaults {
+        margin-bottom: 40px;
+    }
     form {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 25px; padding: 30px; background-color: var(--yoco-surface);
@@ -521,7 +526,10 @@
         .container { padding: 10px; }
         header { flex-direction: column; align-items: flex-start; gap: 20px; }
         header h2 { font-size: 2rem; }
-        .session-settings, form { padding: 20px; grid-template-columns: 1fr; }
+        .session-settings, .product-defaults, form { 
+            padding: 20px; 
+            grid-template-columns: 1fr; 
+        }
         .variant-group-header, .variant-option-row, .variant-pricing-row, .modifier-group-header, .modifier-option-row { grid-template-columns: 1fr; gap: 15px; }
         th, td { padding: 12px 10px; font-size: 13px; }
         .button-container { width: 100%; flex-direction: column; }
@@ -572,6 +580,28 @@
         </div>
     </div>
 
+    <div class="product-defaults">
+        <h3>Product Defaults</h3>
+        <div class="form-group">
+            <label for="taxApplicable" class="tooltip"><span class="label-text">Tax Applicable<span class="required-star">*</span></span><span class="tooltiptext">Select whether this product is subject to tax.</span></label>
+            <select id="taxApplicable" required>
+                <option value="" disabled selected>-- Choose --</option>
+                <option value="true">TRUE</option>
+                <option value="false">FALSE</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="productType" class="tooltip"><span class="label-text">Product Type<span class="required-star">*</span></span><span class="tooltiptext">Defines how the item is handled in inventory. 'finishedGood' is sold, 'rawMaterial' is used in recipes, 'Manufactured' is a recipe item itself.</span></label>
+            <select id="productType" required>
+                <option value="" disabled selected>-- Select --</option>
+                <option value="finishedGood">finishedGood</option>
+                <option value="rawMaterial">rawMaterial</option>
+                <option value="finishedGood & rawMaterial">finishedGood & rawMaterial</option>
+                <option value="Manufactured">Manufactured</option>
+            </select>
+        </div>
+    </div>
+
     <form id="productForm" novalidate>
         <input type="hidden" id="editingIndex" value="-1">
         <div class="form-group">
@@ -583,26 +613,6 @@
             </div>
         </div>
         
-        <div class="form-group">
-            <label for="taxApplicable" class="tooltip"><span class="label-text">Tax Applicable<span class="required-star">*</span></span><span class="tooltiptext">Select whether this product is subject to tax.</span></label>
-            <select id="taxApplicable" required>
-                <option value="" disabled selected>-- Choose --</option>
-                <option value="true">TRUE</option>
-                <option value="false">FALSE</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="productType" class="tooltip"><span class="label-text">Product Type<span class="required-star">*</span></span><span class="tooltiptext">Defines how the item is handled in inventory. 'finishedGood' is sold, 'rawMaterial' is used in recipes, 'Manufactured' is a recipe item itself.</span></label>
-            <select id="productType" required>
-                <option value="" disabled selected>-- Select --</option>
-                <option value="finishedGood">finishedGood</option>
-                <option value="rawMaterial">rawMaterial</option>
-                <option value="finishedGood & rawMaterial">finishedGood & rawMaterial</option>
-                <option value="Manufactured">Manufactured</option>
-            </select>
-        </div>
-
         <div class="form-group" id="sellingPriceGroup">
             <label for="sellingPrice" id="sellingPriceLabel" class="tooltip"><span class="label-text">Default Selling Price</span><span class="tooltiptext">Set the price if the product has no variants. This field is hidden when variants are added.</span></label>
             <input type="number" step="0.01" id="sellingPrice" placeholder="e.g., 35.00">
@@ -956,14 +966,14 @@
         const stockSearch = document.getElementById('stockSearch');
         productSearch.addEventListener('input', () => filterTable(productSearch, 'productTable'));
         stockSearch.addEventListener('input', () => filterTable(stockSearch, 'stockTable'));
+
+        // Listener for the moved product type select
+        productTypeSelect.addEventListener('change', updateRequiredFields);
     });
 
     mainActionButton.addEventListener('click', handleMainAction);
     sessionDefinePluSelect.addEventListener('change', () => { if (defaultsSet) { sessionDefinePlu = sessionDefinePluSelect.value; handlePluVisibility(); } });
-    productTypeSelect.addEventListener('change', () => {
-        updateRequiredFields();
-        renderVariantGroups();
-    });
+    
     inventoryCategoryInput.addEventListener('input', handleInventoryCategoryChange);
     hasBarcodeSelect.addEventListener('change', handleBarcodeVisibility);
 
@@ -1234,7 +1244,9 @@
     function saveState() {
       const state = { 
           products, pluCounter, sessionSite, sessionDefinePlu, defaultsSet,
-          currentModifierGroups, rememberCategoriesChecked, lastUsedCategories
+          currentModifierGroups, rememberCategoriesChecked, lastUsedCategories,
+          sessionTax: document.getElementById('taxApplicable').value,
+          sessionProdType: document.getElementById('productType').value
       };
       localStorage.setItem('productData', JSON.stringify(state));
       showSaveStatus();
@@ -1253,6 +1265,8 @@
         rememberCategoriesChecked = state.rememberCategoriesChecked !== false; // Default to true if not set
         lastUsedCategories = state.lastUsedCategories || { prep: '', menu: '', inv: '' };
 
+        if (state.sessionTax) document.getElementById('taxApplicable').value = state.sessionTax;
+        if (state.sessionProdType) document.getElementById('productType').value = state.sessionProdType;
         rememberCategoriesCheckbox.checked = rememberCategoriesChecked;
 
         if (defaultsSet) {
@@ -1280,6 +1294,8 @@
         lastUsedCategories = { prep: '', menu: '', inv: '' };
         localStorage.removeItem('productData');
         sessionSiteInput.value = ''; sessionDefinePluSelect.value = 'no';
+        document.getElementById('taxApplicable').value = '';
+        document.getElementById('productType').value = '';
         editDefaults(true);
         updateTable();
     }
@@ -1437,6 +1453,7 @@
         document.getElementById('linkSingleModifierBtn').disabled = isDisabled;
 
         updateSingleProductModifierIndicator();
+        saveState(); // Save defaults when they change
     }
 
     function updateSingleProductModifierIndicator() {
@@ -1783,17 +1800,17 @@
     function gatherProductData() {
         return {
             productName: sanitizeInput(document.getElementById("productName").value.trim()),
+            taxApplicable: document.getElementById("taxApplicable").value,
+            productType: document.getElementById("productType").value,
             uom: document.getElementById("uom").value,
             prepLocation: sanitizeInput(document.getElementById("prepLocation").value.trim()),
             menuCategory: sanitizeInput(document.getElementById("menuCategory").value.trim()),
-            productType: document.getElementById("productType").value,
             invCategory: sanitizeInput(document.getElementById("inventoryCategory").value.trim()),
             invSubCategory: sanitizeInput(document.getElementById("inventorySubCategory").value.trim()),
             suppliedQuantity: document.getElementById("suppliedQuantity").value.trim(),
             yieldQuantity: document.getElementById("yieldQuantity").value.trim(),
             defaultCost: parseFloat(document.getElementById("costPrice").value),
             defaultPrice: parseFloat(document.getElementById("sellingPrice").value),
-            taxApplicable: document.getElementById("taxApplicable").value,
             hasBarcode: document.getElementById("hasBarcode").value,
             barcode: sanitizeInput((document.getElementById("hasBarcode").value === 'yes') ? document.getElementById("barcode").value.trim() : ""),
             customPlu: sanitizeInput(document.getElementById("customPlu").value.trim()),
@@ -1973,9 +1990,12 @@
         const source = product._source;
         editingIndexInput.value = index;
 
-        document.getElementById("productName").value = source.productName;
+        // Set the default selectors to match the source data
         document.getElementById("taxApplicable").value = source.taxApplicable;
         document.getElementById("productType").value = source.productType;
+        
+        // Populate the rest of the form
+        document.getElementById("productName").value = source.productName;
         document.getElementById("uom").value = source.uom;
         document.getElementById("prepLocation").value = source.prepLocation;
         document.getElementById("menuCategory").value = source.menuCategory;
@@ -2019,7 +2039,18 @@
 
     function resetForm() {
         clearAllValidationErrors();
-        document.getElementById('productForm').reset();
+        // Don't reset the new defaults, only the main form
+        const formToReset = document.getElementById('productForm');
+        Array.from(formToReset.elements).forEach(el => {
+            if (el.type === 'text' || el.type === 'number' || el.type === 'search' || el.tagName.toLowerCase() === 'textarea') {
+                el.value = '';
+            } else if (el.type === 'checkbox' || el.type === 'radio') {
+                el.checked = false;
+            } else if (el.tagName.toLowerCase() === 'select') {
+                 if(el.id !== 'uom') el.selectedIndex = 0;
+            }
+        });
+
         document.getElementById('uom').value = 'ea';
         editingIndexInput.value = '-1';
         currentVariantGroups = [];
