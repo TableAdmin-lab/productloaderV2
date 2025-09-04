@@ -93,7 +93,7 @@
         grid-column: 1 / -1; margin: 0 0 10px 0; color: var(--yoco-primary); 
     }
     .product-defaults {
-        margin-bottom: 40px;
+        margin-top: -20px; /* Adjust spacing between the two default boxes */
     }
     form {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -564,12 +564,12 @@
     <div class="session-settings">
         <h3>Session Defaults</h3>
         <div class="form-group">
-            <label for="sessionSite" class="tooltip"><span class="label-text">Site<span class="required-star">*</span></span><span class="tooltiptext">The name of the physical location or branch this product belongs to.</span></label>
+            <label for="sessionSite" class="tooltip"><span class="label-text">Site<span class="required-star">*</span></span><span class="tooltiptext">Enter the name of your store or business location (e.g., "Main Street Cafe"). This is a required field.</span></label>
             <input list="siteList" id="sessionSite" required placeholder="e.g., Main Street Cafe">
             <datalist id="siteList"></datalist>
         </div>
         <div class="form-group">
-            <label for="sessionDefinePlu" class="tooltip"><span class="label-text">Define PLU/SKU?<span class="required-star">*</span></span><span class="tooltiptext">Choose 'Yes' to manually enter a unique code for each product, or 'No' to have one automatically generated.</span></label>
+            <label for="sessionDefinePlu" class="tooltip"><span class="label-text">Define PLU/SKU?<span class="required-star">*</span></span><span class="tooltiptext">Choose 'Yes' for manual entry if you have a pre-existing SKU system, or 'No' to have one automatically generated.</span></label>
             <select id="sessionDefinePlu">
                 <option value="no">No (Auto-generate)</option>
                 <option value="yes">Yes (Manual Entry)</option>
@@ -583,7 +583,7 @@
     <div class="product-defaults">
         <h3>Product Defaults</h3>
         <div class="form-group">
-            <label for="taxApplicable" class="tooltip"><span class="label-text">Tax Applicable<span class="required-star">*</span></span><span class="tooltiptext">Select whether this product is subject to tax.</span></label>
+            <label for="taxApplicable" class="tooltip"><span class="label-text">Tax Applicable<span class="required-star">*</span></span><span class="tooltiptext">Select TRUE if tax should be added to the price, otherwise select FALSE.</span></label>
             <select id="taxApplicable" required>
                 <option value="" disabled selected>-- Choose --</option>
                 <option value="true">TRUE</option>
@@ -591,7 +591,7 @@
             </select>
         </div>
         <div class="form-group">
-            <label for="productType" class="tooltip"><span class="label-text">Product Type<span class="required-star">*</span></span><span class="tooltiptext">Defines how the item is handled in inventory. 'finishedGood' is sold, 'rawMaterial' is used in recipes, 'Manufactured' is a recipe item itself.</span></label>
+            <label for="productType" class="tooltip"><span class="label-text">Product Type<span class="required-star">*</span></span><span class="tooltiptext">Choose the type that best describes your product. This selection will change which fields are required in the form below.</span></label>
             <select id="productType" required>
                 <option value="" disabled selected>-- Select --</option>
                 <option value="finishedGood">finishedGood</option>
@@ -605,7 +605,7 @@
     <form id="productForm" novalidate>
         <input type="hidden" id="editingIndex" value="-1">
         <div class="form-group">
-            <label for="productName" class="tooltip"><span class="label-text">Product Name<span class="required-star">*</span></span><span class="tooltiptext">The primary name of the item as it will appear on menus and in reports.</span></label>
+            <label for="productName" class="tooltip"><span class="label-text">Product Name<span class="required-star">*</span></span><span class="tooltiptext">The base name for your product (e.g., "Chicken Pizza").</span></label>
             <input type="text" id="productName" required placeholder="e.g., Chicken Pizza">
             <div id="single-product-modifier-controls" style="display: none; margin-top: 10px;">
                 <button type="button" id="linkSingleModifierBtn" class="btn-add btn-add-dynamic">Link Modifier</button>
@@ -614,22 +614,19 @@
         </div>
         
         <div class="form-group" id="sellingPriceGroup">
-            <label for="sellingPrice" id="sellingPriceLabel" class="tooltip"><span class="label-text">Default Selling Price</span><span class="tooltiptext">Set the price if the product has no variants. This field is hidden when variants are added.</span></label>
+            <label for="sellingPrice" id="sellingPriceLabel" class="tooltip"><span class="label-text">Default Selling Price</span><span class="tooltiptext">The price of the product if it has no variants. This field is hidden when variants are added.</span></label>
             <input type="number" step="0.01" id="sellingPrice" placeholder="e.g., 35.00">
         </div>
 
         <div class="form-group" id="pluEntryGroup" style="display: none;">
-            <label for="customPlu" class="tooltip"><span class="label-text">Custom Base PLU/SKU<span class="required-star">*</span></span><span class="tooltiptext">Enter a unique code for this product. This will be the base for variants if any are added.</span></label>
+            <label for="customPlu" class="tooltip"><span class="label-text">Custom Base PLU/SKU<span class="required-star">*</span></span><span class="tooltiptext">Enter your unique identifier for this product. This only appears if you select "Yes (Manual Entry)" in the session defaults.</span></label>
             <input type="text" id="customPlu" placeholder="e.g., PIZZA-CHE">
         </div>
         
         <div class="variants-and-pricing-wrapper">
             <div id="variants-column">
                 <div> <label class="tooltip">Variant Groups
-                        <span class="tooltiptext with-gif">
-                            <span class="tooltip-text-content">Create groups for product options like size or color. Each group can have multiple options.</span>
-                            <img src="variant-groups-demo.gif" alt="Variant groups demo" class="tooltip-gif">
-                        </span>
+                        <span class="tooltiptext">Use this for different versions of a product, like size or color. Each variant can have its own price.</span>
                     </label>
                     <div id="variantGroupsContainer"></div>
                     <div class="dynamic-controls-wrapper">
@@ -637,7 +634,7 @@
                     </div>
                 </div>
                 <div> <label class="tooltip">Modifier Groups
-                        <span class="tooltiptext">Create optional add-ons (e.g., Extra Toppings) and link them to products or variants.</span>
+                        <span class="tooltiptext">Use this for optional add-ons or extras that customers can add to a product (e.g., "Extra Toppings").</span>
                      </label>
                      <div class="dynamic-controls-wrapper">
                         <button type="button" id="openModifierModalBtn" class="btn-add btn-add-dynamic">Add/Edit Modifiers</button>
@@ -646,14 +643,14 @@
             </div>
             <div id="pricing-column" style="display: none;">
                 <label class="tooltip">Combination Pricing
-                    <span class="tooltiptext">Set the price for each unique combination of variants. A selling price is required for each.</span>
+                    <span class="tooltiptext">Set the unique selling price for each specific variant combination.</span>
                 </label>
                 <div id="variantPricingContainer"></div>
             </div>
         </div>
 
         <div class="form-group">
-            <label for="uom" class="tooltip"><span class="label-text">UOM<span class="required-star">*</span></span><span class="tooltiptext">Unit of Measure. How the product is sold or measured (e.g., Each, kg, Litres).</span></label>
+            <label for="uom" class="tooltip"><span class="label-text">UOM<span class="required-star">*</span></span><span class="tooltiptext">Unit of Measure. How the product is sold (e.g., Each, Kilograms, Litres).</span></label>
             <select id="uom" required>
             <option value="" disabled>-- Select UOM --</option>
             <option value="ea" selected>Each</option>
@@ -665,31 +662,31 @@
         </div>
 
         <div class="form-group" id="prepLocationGroup">
-            <label for="prepLocation" class="tooltip"><span class="label-text">Prep Location<span class="required-star">*</span></span><span class="tooltiptext">Where the item is prepared (e.g., Kitchen, Bar).</span></label>
+            <label for="prepLocation" class="tooltip"><span class="label-text">Prep Location<span class="required-star">*</span></span><span class="tooltiptext">The area where the item is prepared (e.g., "Kitchen", "Bar").</span></label>
             <input list="prepList" id="prepLocation" required placeholder="e.g., Kitchen">
             <datalist id="prepList"></datalist>
         </div>
 
         <div class="form-group" id="menuCategoryGroup">
-            <label for="menuCategory" class="tooltip"><span class="label-text">Menu Category<span class="required-star">*</span></span><span class="tooltiptext">The category this item will appear under on the menu (e.g., Starters, Mains, Drinks).</span></label>
+            <label for="menuCategory" class="tooltip"><span class="label-text">Menu Category<span class="required-star">*</span></span><span class="tooltiptext">The category the product will appear under on your point of sale (e.g., "Burgers", "Hot Drinks").</span></label>
             <input type="text" id="menuCategory" list="menuList" required placeholder="e.g., Burgers">
             <datalist id="menuList"></datalist>
         </div>
         
         <div class="form-group">
-            <label for="inventoryCategory" id="inventoryCategoryLabel" class="tooltip"><span class="label-text">Inventory Category</span><span class="tooltiptext">The main category for tracking this item in inventory (e.g., Food, Beverages, Packaging).</span></label>
+            <label for="inventoryCategory" id="inventoryCategoryLabel" class="tooltip"><span class="label-text">Inventory Category</span><span class="tooltiptext">A broad category for stock management (e.g., "Food", "Beverages").</span></label>
             <input type="text" id="inventoryCategory" list="inventoryCategoryList" placeholder="e.g., Food">
             <datalist id="inventoryCategoryList"></datalist>
         </div>
 
         <div class="form-group">
-            <label for="inventorySubCategory" id="inventorySubCategoryLabel" class="tooltip"><span class="label-text">Inventory Sub-Category</span><span class="tooltiptext">A more specific inventory category (e.g., Meat, Dairy, Produce).</span></label>
+            <label for="inventorySubCategory" id="inventorySubCategoryLabel" class="tooltip"><span class="label-text">Inventory Sub-Category</span><span class="tooltiptext">A more specific stock category (e.g., "Meat", "Coffee & Tea").</span></label>
             <input type="text" id="inventorySubCategory" list="inventorySubCategoryList" placeholder="e.g., Meat">
             <datalist id="inventorySubCategoryList"></datalist>
         </div>
         
         <div class="form-group" id="suppliedQuantityGroup" style="display: none;">
-            <label for="suppliedQuantity" id="suppliedQuantityLabel" class="tooltip"><span class="label-text">Supplied Quantity</span><span class="tooltiptext">The quantity of a raw material received from a supplier (e.g., 10 kg).</span></label>
+            <label for="suppliedQuantity" id="suppliedQuantityLabel" class="tooltip"><span class="label-text">Supplied Quantity</span><span class="tooltiptext">For raw material product types, this is the quantity you receive from your supplier (e.g., 5 for a 5kg bag).</span></label>
             <div class="input-wrapper">
                 <input type="number" id="suppliedQuantity" placeholder="e.g., 100">
                 <span id="quantityGhostText" class="ghost-text"></span>
@@ -697,12 +694,12 @@
         </div>
         
         <div class="form-group" id="costPriceGroup" style="display: none;">
-            <label for="costPrice" id="costPriceLabel" class="tooltip"><span class="label-text">Total Cost Price (ex. Vat)</span><span class="tooltiptext">The total cost for the supplied quantity of a raw material.</span></label>
+            <label for="costPrice" id="costPriceLabel" class="tooltip"><span class="label-text">Total Cost Price (ex. Vat)</span><span class="tooltiptext">The cost of the product. For raw materials, this is the cost for the entire supplied quantity.</span></label>
             <input type="number" step="0.01" id="costPrice" placeholder="e.g., 15.50">
         </div>
 
         <div class="form-group" id="yieldQuantityGroup" style="display: none;">
-            <label for="yieldQuantity" id="yieldQuantityLabel" class="tooltip"><span class="label-text">Yield Quantity</span><span class="tooltiptext">The quantity produced from a manufactured recipe.</span></label>
+            <label for="yieldQuantity" id="yieldQuantityLabel" class="tooltip"><span class="label-text">Yield Quantity</span><span class="tooltiptext">For manufactured product types, this is the quantity produced from the raw materials.</span></label>
              <div class="input-wrapper">
                 <input type="number" id="yieldQuantity" placeholder="e.g., 50">
                 <span id="yieldGhostText" class="ghost-text"></span>
@@ -710,7 +707,7 @@
         </div>
 
         <div class="form-group">
-            <label for="hasBarcode" class="tooltip"><span class="label-text">Has Barcode?</span><span class="tooltiptext">Select 'Yes' if this product has a scannable barcode.</span></label>
+            <label for="hasBarcode" class="tooltip"><span class="label-text">Has Barcode?</span><span class="tooltiptext">Select "Yes" if your product has a scannable barcode to reveal the entry field.</span></label>
             <select id="hasBarcode"> <option value="no">No</option> <option value="yes">Yes</option> </select>
         </div>
 
@@ -967,8 +964,9 @@
         productSearch.addEventListener('input', () => filterTable(productSearch, 'productTable'));
         stockSearch.addEventListener('input', () => filterTable(stockSearch, 'stockTable'));
 
-        // Listener for the moved product type select
+        // Listener for the moved product type select to update the main form
         productTypeSelect.addEventListener('change', updateRequiredFields);
+        document.getElementById('taxApplicable').addEventListener('change', saveState);
     });
 
     mainActionButton.addEventListener('click', handleMainAction);
