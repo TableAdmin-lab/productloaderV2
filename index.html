@@ -475,21 +475,28 @@
         background-color: var(--yoco-surface);
         border: 1px solid var(--yoco-border);
         border-radius: 12px;
-        padding: 8px;
+        padding: 4px;
         box-shadow: var(--shadow);
         z-index: 950;
         display: flex;
-        gap: 8px;
+        gap: 4px;
         align-items: center;
-        transition: background-color 0.2s, border-color 0.2s;
+        transition: all 0.3s ease-in-out;
+        opacity: 0.6;
+        transform: translateX(10px);
+    }
+
+    #hover-board:hover {
+        opacity: 1;
+        transform: translateX(0);
     }
 
     .hover-board-link {
         color: var(--yoco-text-secondary);
         text-decoration: none;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 500;
-        padding: 8px 12px;
+        padding: 6px 10px;
         border-radius: 8px;
         transition: background-color 0.2s, color 0.2s;
     }
@@ -504,7 +511,7 @@
         background: none;
         border: none;
         cursor: pointer;
-        padding: 8px;
+        padding: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1903,7 +1910,7 @@
                 "GP": 0, "Selling UOM": data.uom, "Preparation Location": '', "Menu Category": '',
                 "Inventory Category": data.invCategory, "Inventory Sub-Category": data.invSubCategory,
                 "Product Type": 'single', "Supplied Quantity": data.suppliedQuantity, "Manufactured Yield": '',
-                "Enabled": true, "Cost Price": data.defaultCost || 0, "Selling Price": 0, "Tax Applicable": false,
+                "Enabled": true, "Cost Price": data.defaultCost, "Selling Price": 0, "Tax Applicable": false,
                 "Modifier": '', "Barcode": ''
             };
             products.push(rawProduct);
@@ -1917,7 +1924,7 @@
             combinationsToProcess.forEach((combo, index) => {
                 const finalName = combo.combination ? `${data.productName} - ${combo.combination}` : data.productName;
                 const finalPrice = parseFloat(combo.sellingPrice) || 0;
-                const gp = (finalPrice > 0 && finalPrice > unitCost) ? ((finalPrice - unitCost) / finalPrice) * 100 : 0;
+                const gp = (finalPrice > 0 && unitCost > 0) ? ((finalPrice - unitCost) / finalPrice) * 100 : 0;
                 const productPlu = (combinationsToProcess.length > 1) ? `${finishedPluBase}-${index + 1}` : finishedPluBase;
 
                 const linkedModifierGroupNames = data.modifierLinks[combo.combination || ''] || [];
@@ -1955,7 +1962,7 @@
                 const finalName = (combo.combination) ? `${prefixedBaseName} - ${combo.combination}` : prefixedBaseName;
                 const finalPrice = parseFloat(combo.sellingPrice) || 0;
                 const finalCost = parseFloat(combo.costPrice) || 0;
-                const gp = (finalPrice > 0 && finalPrice > finalCost) ? ((finalPrice - finalCost) / finalPrice) * 100 : 0;
+                const gp = (finalPrice > 0 && finalCost > 0) ? ((finalPrice - finalCost) / finalPrice) * 100 : 0;
                 const productPlu = (combinationsToProcess.length > 1) ? `${pluBase}-${index + 1}` : pluBase;
 
                 const linkedModifierGroupNames = data.modifierLinks[combo.combination || ''] || [];
