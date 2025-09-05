@@ -392,15 +392,20 @@
         font-size: 12px; font-weight: 600;
         flex-shrink: 0;
     }
-    .modifier-indicator-wrapper.tooltip { border-bottom: none; }
-    .modifier-indicator-wrapper .tooltiptext { min-width: 150px; margin-left: -75px; }
+    .modifier-indicator-wrapper.tooltip { border-bottom: none; display: inline-block; vertical-align: middle; }
+    .modifier-indicator-wrapper .tooltiptext { min-width: 200px; margin-left: -100px; }
 
     .pricing-controls {
         display: flex; gap: 10px; align-items: center;
         margin-bottom: 15px; padding: 10px;
         background-color: #2a2a2a; border-radius: 8px;
     }
-    .pricing-controls input { flex-grow: 1; }
+    .pricing-controls select {
+        flex-grow: 1;
+    }
+    .pricing-controls input { 
+        flex-grow: 1; 
+    }
 
     .tooltip .tooltiptext.with-gif {
         width: 850px;
@@ -743,6 +748,7 @@
                             <th>Variant</th>
                             <th>Menu Category</th>
                             <th>Selling Price</th>
+                            <th>Modifiers</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -809,14 +815,6 @@
   <div class="modal-content">
     <h4 id="linkModifierModalTitle" style="color: var(--yoco-primary); margin-top: 0; margin-bottom: 20px;">Link Modifiers for...</h4>
     
-    <div class="modal-section-divider">
-        <h4>Bulk Apply to All Variants on Form</h4>
-        <div style="display: flex; gap: 10px; align-items: center; padding: 10px 0;">
-            <select id="bulkModifierSelect" style="flex-grow: 1;"></select>
-            <button type="button" id="bulkApplyModifierBtn" class="btn-add-dynamic">Apply to All</button>
-        </div>
-    </div>
-
     <div id="linkModifierListContainer">
       </div>
     <div class="modal-actions" style="margin-top: 20px;">
@@ -967,6 +965,17 @@
         // Listener for the moved product type select to update the main form
         productTypeSelect.addEventListener('change', updateRequiredFields);
         document.getElementById('taxApplicable').addEventListener('change', saveState);
+
+        // Auto-capitalize listeners
+        const fieldsToCapitalize = ['sessionSite', 'productName', 'prepLocation', 'menuCategory', 'inventoryCategory', 'inventorySubCategory'];
+        fieldsToCapitalize.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('blur', (e) => {
+                    e.target.value = capitalizeWords(e.target.value.trim());
+                });
+            }
+        });
     });
 
     mainActionButton.addEventListener('click', handleMainAction);
@@ -1015,6 +1024,12 @@
         return str.toString().replace(allowedCharsRegex, '');
     }
 
+    function capitalizeWords(str) {
+        if (!str) return '';
+        // This will capitalize the first letter of each word.
+        return str.replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     // --- MODIFIER MODAL & LINKING LOGIC ---
     function renderModifierModal() {
         renderNewModifierGroupForm();
@@ -1037,6 +1052,12 @@
             <button type="button" id="commitNewModifierGroupBtn" class="btn-add" style="margin-top:10px; width: 100%;">Add Group to Library</button>
         `;
 
+        newModifierGroupForm.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('blur', e => {
+                e.target.value = capitalizeWords(e.target.value.trim());
+            });
+        });
+
         newModifierGroupForm.querySelector('#addNewModifierOptionBtn').onclick = () => {
             const container = newModifierGroupForm.querySelector('#new-modifier-options-container');
             const optionRow = document.createElement('div');
@@ -1047,6 +1068,9 @@
                 <button type="button" class="btn-remove">&ndash;</button>
             `;
             optionRow.querySelector('.btn-remove').onclick = () => optionRow.remove();
+            optionRow.querySelector('input[type="text"]').addEventListener('blur', e => {
+                e.target.value = capitalizeWords(e.target.value.trim());
+            });
             container.appendChild(optionRow);
         };
 
@@ -1114,6 +1138,12 @@
             editModifierGroupsContainer.appendChild(groupEl);
         });
 
+        editModifierGroupsContainer.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('blur', e => {
+                e.target.value = capitalizeWords(e.target.value.trim());
+            });
+        });
+
         editModifierGroupsContainer.querySelectorAll('.add-modifier-option').forEach(btn => btn.onclick = (e) => {
             saveModifiersFromModal(false); 
             currentModifierGroups[e.target.dataset.groupIndex].options.push({ name: '', price: 0 });
@@ -1167,9 +1197,8 @@
     }
 
     function openLinkModifierModal(variantCombination) {
-        linkModifierModal.dataset.activeVariant = variantCombination;
         linkModifierModalTitle.textContent = `Link Modifiers for: ${variantCombination || document.getElementById('productName').value || 'this product'}`;
-        
+        linkModifierModal.dataset.activeVariant = variantCombination;
         linkModifierListContainer.innerHTML = '';
         const linkedGroups = currentModifierLinks[variantCombination] || [];
 
@@ -1203,36 +1232,6 @@
                 currentModifierLinks[variantCombination] = currentLinks;
             };
         });
-
-        const bulkSelect = document.getElementById('bulkModifierSelect');
-        const bulkApplyBtn = document.getElementById('bulkApplyModifierBtn');
-        bulkSelect.innerHTML = '<option value="">-- Select Group to Bulk Apply --</option>';
-
-        currentModifierGroups.forEach(group => {
-            const option = document.createElement('option');
-            option.value = group.groupName;
-            option.textContent = group.groupName;
-            bulkSelect.appendChild(option);
-        });
-
-        bulkApplyBtn.onclick = () => {
-            const selectedGroup = bulkSelect.value;
-            if (!selectedGroup) {
-                showModal("Please select a modifier group to apply.", "error");
-                return;
-            }
-
-            currentVariantPricing.forEach(priceItem => {
-                let currentLinks = currentModifierLinks[priceItem.combination] || [];
-                if (!currentLinks.includes(selectedGroup)) {
-                    currentLinks.push(selectedGroup);
-                }
-                currentModifierLinks[priceItem.combination] = currentLinks;
-            });
-
-            showModal(`"${selectedGroup}" was applied to all variants on the current form.`, 'warning');
-            openLinkModifierModal(variantCombination); 
-        };
 
         linkModifierModal.classList.add('show');
     }
@@ -1522,6 +1521,10 @@
                 currentVariantGroups[groupIndex].groupName = e.target.value;
                 generateAndRenderPricing();
             };
+            groupNameInput.addEventListener('blur', (e) => {
+                e.target.value = capitalizeWords(e.target.value.trim());
+            });
+
             header.appendChild(groupNameInput);
             const removeGroupBtn = document.createElement('button');
             removeGroupBtn.type = 'button';
@@ -1546,6 +1549,9 @@
                     currentVariantGroups[groupIndex].options[optionIndex].name = e.target.value;
                     generateAndRenderPricing();
                 };
+                optionNameInput.addEventListener('blur', (e) => {
+                    e.target.value = capitalizeWords(e.target.value.trim());
+                });
                 optionRow.appendChild(optionNameInput);
                 const removeOptionBtn = document.createElement('button');
                 removeOptionBtn.type = 'button';
@@ -1609,9 +1615,8 @@
             return;
         }
 
-        const defaultPrice = document.getElementById('sellingPrice').value;
-
         // Add "Apply Price to All" controls
+        const defaultPrice = document.getElementById('sellingPrice').value;
         const pricingControls = document.createElement('div');
         pricingControls.className = 'pricing-controls';
         pricingControls.innerHTML = `
@@ -1627,6 +1632,50 @@
             }
         };
 
+        // Add "Bulk Link Modifier" controls
+        if (currentModifierGroups.length > 0) {
+            const bulkModifierControls = document.createElement('div');
+            bulkModifierControls.className = 'pricing-controls';
+            bulkModifierControls.style.borderTop = '1px solid var(--yoco-border)';
+            bulkModifierControls.style.paddingTop = '15px';
+            bulkModifierControls.style.marginTop = '15px';
+
+
+            const select = document.createElement('select');
+            select.id = 'mainBulkModifierSelect';
+            select.innerHTML = '<option value="">-- Select Modifier Group to Bulk Link --</option>';
+            currentModifierGroups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.groupName;
+                option.textContent = group.groupName;
+                select.appendChild(option);
+            });
+
+            const applyBtn = document.createElement('button');
+            applyBtn.type = 'button';
+            applyBtn.textContent = 'Apply to All';
+            applyBtn.className = 'btn-add-dynamic';
+            applyBtn.onclick = () => {
+                const selectedGroup = select.value;
+                if (!selectedGroup) {
+                    showModal("Please select a modifier group to apply.", "error");
+                    return;
+                }
+                currentVariantPricing.forEach(priceItem => {
+                    let currentLinks = currentModifierLinks[priceItem.combination] || [];
+                    if (!currentLinks.includes(selectedGroup)) {
+                        currentLinks.push(selectedGroup);
+                    }
+                    currentModifierLinks[priceItem.combination] = currentLinks;
+                });
+                showModal(`"${selectedGroup}" was linked to all variants.`, 'warning');
+                generateAndRenderPricing(); // Re-render to show updated indicators
+            };
+
+            bulkModifierControls.appendChild(select);
+            bulkModifierControls.appendChild(applyBtn);
+            variantPricingContainer.appendChild(bulkModifierControls);
+        }
 
         const arraysToCombine = validGroups.map(g => g.options.filter(o => o.name.trim()).map(o => ({ groupName: g.groupName.trim(), optionName: o.name.trim() })));
         
@@ -1807,8 +1856,8 @@
             invSubCategory: sanitizeInput(document.getElementById("inventorySubCategory").value.trim()),
             suppliedQuantity: document.getElementById("suppliedQuantity").value.trim(),
             yieldQuantity: document.getElementById("yieldQuantity").value.trim(),
-            defaultCost: parseFloat(document.getElementById("costPrice").value),
-            defaultPrice: parseFloat(document.getElementById("sellingPrice").value),
+            defaultCost: parseFloat(document.getElementById("costPrice").value) || 0,
+            defaultPrice: parseFloat(document.getElementById("sellingPrice").value) || 0,
             hasBarcode: document.getElementById("hasBarcode").value,
             barcode: sanitizeInput((document.getElementById("hasBarcode").value === 'yes') ? document.getElementById("barcode").value.trim() : ""),
             customPlu: sanitizeInput(document.getElementById("customPlu").value.trim()),
@@ -1823,7 +1872,7 @@
         if (!defaultsSet) { showModal("Please set Session Defaults first.", "error"); return; }
         
         const data = gatherProductData();
-        const hasZeroPriceVariant = data.variantPricing.length > 0 && data.variantPricing.some(v => parseFloat(v.sellingPrice) === 0);
+        const hasZeroPriceVariant = data.variantPricing.length > 0 && data.variantPricing.some(v => (parseFloat(v.sellingPrice) || 0) === 0);
         if (hasZeroPriceVariant) {
             showModal('Some variants have R0.00 price. Continue?', 'warning', () => createAndAddProducts(data), true);
         } else {
@@ -1849,7 +1898,7 @@
                 productGroupId: groupId,
                 pluBase: rawPluBase,
                 _source: data,
-                "Product PLU": rawPluBase, "Product Name & Variant": `(Raw) ${data.productName}`, "Base Name": `(Raw) ${data.productName}`,
+                "Product PLU": rawPluBase, "Product Name & Variant": `(RAW) ${data.productName}`, "Base Name": `(RAW) ${data.productName}`,
                 "Variant Name": '', "Original Product Type": 'rawMaterial', "Site": sessionSite,
                 "GP": 0, "Selling UOM": data.uom, "Preparation Location": '', "Menu Category": '',
                 "Inventory Category": data.invCategory, "Inventory Sub-Category": data.invSubCategory,
@@ -1867,7 +1916,7 @@
             
             combinationsToProcess.forEach((combo, index) => {
                 const finalName = combo.combination ? `${data.productName} - ${combo.combination}` : data.productName;
-                const finalPrice = isNaN(combo.sellingPrice) ? 0 : combo.sellingPrice;
+                const finalPrice = parseFloat(combo.sellingPrice) || 0;
                 const gp = (finalPrice > 0 && finalPrice > unitCost) ? ((finalPrice - unitCost) / finalPrice) * 100 : 0;
                 const productPlu = (combinationsToProcess.length > 1) ? `${finishedPluBase}-${index + 1}` : finishedPluBase;
 
@@ -1900,12 +1949,12 @@
             
             combinationsToProcess.forEach((combo, index) => {
                 let prefixedBaseName = data.productName;
-                if (data.productType === "rawMaterial") prefixedBaseName = "(Raw) " + data.productName;
+                if (data.productType === "rawMaterial") prefixedBaseName = "(RAW) " + data.productName;
                 else if (data.productType === "Manufactured") prefixedBaseName = "(MAN) " + data.productName;
 
                 const finalName = (combo.combination) ? `${prefixedBaseName} - ${combo.combination}` : prefixedBaseName;
-                const finalPrice = isNaN(combo.sellingPrice) ? 0 : combo.sellingPrice;
-                const finalCost = isNaN(combo.costPrice) ? 0 : combo.costPrice;
+                const finalPrice = parseFloat(combo.sellingPrice) || 0;
+                const finalCost = parseFloat(combo.costPrice) || 0;
                 const gp = (finalPrice > 0 && finalPrice > finalCost) ? ((finalPrice - finalCost) / finalPrice) * 100 : 0;
                 const productPlu = (combinationsToProcess.length > 1) ? `${pluBase}-${index + 1}` : pluBase;
 
@@ -2037,9 +2086,10 @@
 
     function resetForm() {
         clearAllValidationErrors();
-        // Don't reset the new defaults, only the main form
         const formToReset = document.getElementById('productForm');
         Array.from(formToReset.elements).forEach(el => {
+            if (el.id === 'rememberCategories') return;
+            
             if (el.type === 'text' || el.type === 'number' || el.type === 'search' || el.tagName.toLowerCase() === 'textarea') {
                 el.value = '';
             } else if (el.type === 'checkbox' || el.type === 'radio') {
@@ -2145,19 +2195,24 @@
 
           if (isFinishedGoodWithRaw) {
               const rawProduct = products.find(rawP => rawP.productGroupId === p.productGroupId && rawP["Original Product Type"] === 'rawMaterial');
-              
-              const linkBtn = document.createElement("button");
-              linkBtn.className = "btn-link";
-              linkBtn.title = rawProduct ? `Go to: ${rawProduct["Base Name"]}` : "Go to Raw Material";
-              linkBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg>`;
-              linkBtn.onclick = () => navigateToRaw(p.productGroupId);
-              actionsCell.appendChild(linkBtn);
-
               if (rawProduct) {
-                  const rawItemIndicator = document.createElement('span');
-                  rawItemIndicator.className = 'raw-item-indicator';
-                  rawItemIndicator.textContent = rawProduct["Base Name"];
-                  actionsCell.appendChild(rawItemIndicator);
+                  const tooltipDiv = document.createElement('div');
+                  tooltipDiv.className = 'tooltip modifier-indicator-wrapper';
+                  tooltipDiv.title = `Click to navigate to: ${rawProduct["Base Name"]}`;
+                  tooltipDiv.style.cursor = 'pointer';
+                  tooltipDiv.onclick = () => navigateToRaw(p.productGroupId);
+
+                  const indicator = document.createElement('span');
+                  indicator.className = 'modifier-indicator';
+                  indicator.textContent = 'R';
+
+                  const tooltipText = document.createElement('span');
+                  tooltipText.className = 'tooltiptext';
+                  tooltipText.textContent = `Linked Raw: ${rawProduct["Base Name"]}`;
+
+                  tooltipDiv.appendChild(indicator);
+                  tooltipDiv.appendChild(tooltipText);
+                  actionsCell.appendChild(tooltipDiv);
               }
           }
 
@@ -2196,7 +2251,31 @@
                 <td>${p["Variant Name"]}</td>
                 <td>${p["Menu Category"]}</td>
                 <td>${(parseFloat(p["Selling Price"]) || 0).toFixed(2)}</td>
+                <td></td>
             `;
+
+            const modifierCell = row.cells[5];
+            const linkedGroups = p._source?.modifierLinks?.[p["Variant Name"] || ''] || [];
+
+            if (linkedGroups.length > 0) {
+                modifierCell.style.textAlign = 'center';
+                const tooltipDiv = document.createElement('div');
+                tooltipDiv.className = 'tooltip modifier-indicator-wrapper';
+
+                const indicator = document.createElement('span');
+                indicator.className = 'modifier-indicator';
+                indicator.textContent = linkedGroups.length;
+
+                const tooltipText = document.createElement('span');
+                tooltipText.className = 'tooltiptext';
+                tooltipText.style.textAlign = 'left';
+                tooltipText.innerHTML = `<strong>Linked Modifiers:</strong><br>${linkedGroups.join('<br>')}`;
+
+                tooltipDiv.appendChild(indicator);
+                tooltipDiv.appendChild(tooltipText);
+                modifierCell.appendChild(tooltipDiv);
+            }
+            
             row.appendChild(createActionsCell(p, index));
         }
 
